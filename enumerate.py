@@ -16,6 +16,6 @@ for i in range(len(d)):
 print(d)
 print(s)
 print(" ".join(q))
-o = 1221
+o = 1221adasd
 
 
