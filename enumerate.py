@@ -16,5 +16,6 @@ for i in range(len(d)):
 print(d)
 print(s)
 print(" ".join(q))
+o = 12
 
 
