@@ -1,48 +1,46 @@
+# recruiter_bot.py
+
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
-from models import Recruiter, User, Message, engine
+from telegram.ext import Application, CommandHandler, ContextTypes
+from models import Recruiter, engine
 from sqlalchemy.orm import sessionmaker
-from token_all import YOUR_ADMIN_BOT_TOKEN
+import logging
+
+# Настройки логирования
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 TELEGRAM_TOKEN = YOUR_ADMIN_BOT_TOKEN
 Session = sessionmaker(bind=engine)
 
+async def add_recruiter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if context.args:
+        recruiter_name = ' '.join(context.args)
+        session = Session()
 
-async def handle_recruiter_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    message_text = update.message.text
-    recruiter_id = update.message.from_user.id
+        # Проверка на существование рекрутера
+        existing_recruiter = session.query(Recruiter).filter_by(name=recruiter_name).first()
+        if existing_recruiter:
+            await update.message.reply_text(f"Рекрутер с именем {recruiter_name} уже существует.")
+            session.close()
+            return
 
-    session = Session()
-
-    # Найти сообщение пользователя, которому рекрутер еще не ответил
-    db_message = session.query(Message).filter_by(recruiter_id=None).first()
-
-    if db_message:
-        # Отправка сообщения пользователю
-        await context.bot.send_message(
-            chat_id=db_message.user_id,
-            text=message_text
-        )
-
-        # Обновление записи сообщения, чтобы указать, что рекрутер ответил
-        db_message.recruiter_id = recruiter_id
+        # Добавление рекрутера в базу данных
+        new_recruiter = Recruiter(name=recruiter_name, telegram_id=update.message.from_user.id)
+        session.add(new_recruiter)
         session.commit()
+        session.close()
+
+        await update.message.reply_text(f"Рекрутер {recruiter_name} успешно добавлен в базу данных.")
     else:
-        # Если нет сообщений от пользователей, можно отправить сообщение рекрутеру
-        await update.message.reply_text("В данный момент нет сообщений от пользователей.")
-
-    session.close()
-
+        await update.message.reply_text("Пожалуйста, укажите имя рекрутера. Пример: /add_recruiter Иван Иванов")
 
 def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    # Обработчик сообщений рекрутера
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_recruiter_message))
+    application.add_handler(CommandHandler("add_recruiter", add_recruiter))
 
-    # Запуск бота
+    logging.info("Recruiter bot is running...")
     application.run_polling()
-
 
 if __name__ == '__main__':
     main()
