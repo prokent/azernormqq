@@ -1,0 +1,5 @@
+YOUR_ADMIN_BOT_TOKEN = '7086023100:AAEhTKJuWYuZuxKrgp9cvZ5sICA2uDH6ZjE'
+
+YOUR_USER_BOT_TOKEN = '7112295260:AAFpQ1Cqo31Odq-69t54stivkoJ21eTJkug'
+
+sqlite = 'sqlite:///recruiters.db'
